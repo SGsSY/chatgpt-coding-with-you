@@ -4,7 +4,7 @@
   "description": "",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.76.0"
+    "vscode": "^1.75.1"
   },
   "categories": [
     "Other"
@@ -17,7 +17,15 @@
         "command": "chatgpt-coding-with-you.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "chatgpt-coding-with-you.helloWorld",
+          "when": "editorTextFocus"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
