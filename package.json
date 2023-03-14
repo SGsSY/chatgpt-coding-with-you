@@ -16,13 +16,45 @@
       {
         "command": "chatgpt-coding-with-you.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "chatgpt-coding-with-you.settingNewApiKey",
+        "title": "設定 OpenAI API Key"
+      },
+      {
+        "command": "chatgpt-coding-with-you.writeCommentForMe",
+        "title": "幫我寫註解"
+      },
+      {
+        "command": "chatgpt-coding-with-you.writeDescriptionForMe",
+        "title": "解釋這段程式"
+      },
+      {
+        "command": "chatgpt-coding-with-you.improveCodeForMe",
+        "title": "改善這段程式"
       }
     ],
     "menus": {
       "editor/context": [
         {
-          "command": "chatgpt-coding-with-you.helloWorld",
-          "when": "editorTextFocus"
+          "command": "chatgpt-coding-with-you.settingNewApiKey",
+          "when": "editorTextFocus",
+          "group": "ChatGPTCodingWithYou@1"
+        },
+        {
+          "command": "chatgpt-coding-with-you.writeCommentForMe",
+          "when": "editorTextFocus",
+          "group": "ChatGPTCodingWithYou@2"
+        },
+        {
+          "command": "chatgpt-coding-with-you.writeDescriptionForMe",
+          "when": "editorTextFocus",
+          "group": "ChatGPTCodingWithYou@3"
+        },
+        {
+          "command": "chatgpt-coding-with-you.improveCodeForMe",
+          "when": "editorTextFocus",
+          "group": "ChatGPTCodingWithYou@4"
         }
       ]
     }
@@ -36,16 +68,16 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.76.0",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "16.x",
+    "@types/vscode": "^1.76.0",
     "@typescript-eslint/eslint-plugin": "^5.53.0",
     "@typescript-eslint/parser": "^5.53.0",
+    "@vscode/test-electron": "^2.2.3",
     "eslint": "^8.34.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
-    "typescript": "^4.9.5",
-    "@vscode/test-electron": "^2.2.3"
+    "typescript": "^4.9.5"
   }
 }

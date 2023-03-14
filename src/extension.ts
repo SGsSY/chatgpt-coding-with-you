@@ -1,27 +1,177 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as https from 'https';
 
 const projectName = 'chatgpt-coding-with-you';
 const command = {
-	helloWorld: `${projectName}.helloWorld`,
+	settingNewApiKey: `${projectName}.settingNewApiKey`,
+	writeCommentForMe: `${projectName}.writeCommentForMe`,
+	writeDescriptionForMe: `${projectName}.writeDescriptionForMe`,
+	improveCodeForMe: `${projectName}.improveCodeForMe`,
 };
+const openAIKeyId = `${projectName}.openAIKey`;
 
-function commandsRegistration(): Array<vscode.Disposable> {
+async function getOpenAIKey(secrets: vscode.SecretStorage, isReset: boolean): Promise<string> {
+	const secretsOpenAIKey = openAIKeyId;
+	const openAIKey = await secrets.get(secretsOpenAIKey);
+	if (openAIKey && !isReset) {
+		return openAIKey;
+	}
+
+	const inputKey = await vscode.window.showInputBox({
+		title: "Setting OpenAI API Key",
+		prompt: "Please Enter your OpenAI API key. You can find this at beta.openai.com/account/api-keys",
+		ignoreFocusOut: true,
+		placeHolder: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+	});
+
+	if (!inputKey) {
+		return '';
+	}
+
+	secrets.store(secretsOpenAIKey, inputKey);
+	return inputKey;
+}
+
+function getSelectedCode(): string {
+	return vscode.window.activeTextEditor?.document.getText(
+		vscode.window.activeTextEditor?.selection
+	) || '';
+}
+
+async function getEditor(askedQuestion: string) {
+	
+	return await vscode.window.showTextDocument(
+		await vscode.workspace.openTextDocument({
+			content: `${askedQuestion} \n\n =========================== \n\n Querying...`,
+			language: 'markdown',
+		}),
+		{
+			viewColumn: vscode.ViewColumn.Beside,
+			preserveFocus: true,
+			preview: true,
+		},
+	);
+}
+
+async function sendQueryToOpenAIAndShowOnNewEditor(queryText: string, openAIKey: string) {
+	try {
+		let responseText = '';
+		const request = https.request({
+			hostname: 'api.openai.com',
+			path: '/v1/chat/completions',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${openAIKey}`,
+			},
+		}, (response) => {
+			response.on('data', data => {
+				const result = JSON.parse(data.toString());
+				if (result.error) {
+					responseText += result.error.message;
+					return;
+				}
+				responseText += result.choices[0].message.content;
+			});
+		});
+
+		request.write(
+			JSON.stringify({
+				model: 'gpt-3.5-turbo',
+				messages: [{
+					role: 'user',
+					content: queryText,
+				}],
+			})
+		);
+		request.end();
+
+		const editor = await getEditor(queryText);
+		const setOpenAIResponse = (msg: string) => (editBuilder: vscode.TextEditorEdit) => {
+			editBuilder.replace(
+				new vscode.Range(
+					new vscode.Position(
+						editor.document.lineCount - 1, 
+						0
+					),
+					new vscode.Position(
+						editor.document.lineCount, 
+						0
+					)
+				),
+				msg
+			);
+		};
+
+		request.on('close', () => {
+			editor.edit(setOpenAIResponse(
+				responseText || 'Some unexpected things happened.'
+			));
+		});
+
+	} catch (error) {
+		vscode.window.showErrorMessage(`錯誤：${error}`);
+	}
+} 
+
+function commandsRegistration(context: vscode.ExtensionContext): Array<vscode.Disposable> {
 	const registrationList: Array<vscode.Disposable> = [];
 	const addToRegistrationList = (registeredCommand: vscode.Disposable): void => {
 		registrationList.push(registeredCommand);
 	};
 	const registerCommand = vscode.commands.registerCommand;
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
+	// 設定 openAIKey
 	addToRegistrationList(
-		registerCommand(command.helloWorld, () => {
-			// The code you place here will be executed every time your command is executed
-			// Display a message box to the user
-			vscode.window.showInformationMessage('Hello World from ChatGPT Coding With You!');
+		registerCommand(command.settingNewApiKey, async () => {
+			await getOpenAIKey(context.secrets, true);
+		})
+	);
+
+	// 幫已選取的程式區塊寫註解
+	addToRegistrationList(
+		registerCommand(command.writeCommentForMe, async () => {
+
+			const selectedCode = getSelectedCode();
+			if (selectedCode === '') {
+				vscode.window.showErrorMessage('Please Select Code Block First!');
+			}
+
+			const queryText = `請用繁體中文回答我。以下的程式碼請幫我寫註解：\n ${selectedCode}`;
+			const openAIKey = await getOpenAIKey(context.secrets, false);
+			await sendQueryToOpenAIAndShowOnNewEditor(queryText, openAIKey);
+		}
+	));
+
+	// 幫已選取的程式區塊寫說明
+	addToRegistrationList(
+		registerCommand(command.writeDescriptionForMe, async () => {
+
+			const selectedCode = getSelectedCode();
+			if (selectedCode === '') {
+				vscode.window.showErrorMessage('Please Select Code Block First!');
+			}
+
+			const queryText = `請用繁體中文回答我。以下的程式碼請幫我寫說明：\n ${selectedCode}`;
+			const openAIKey = await getOpenAIKey(context.secrets, false);
+			await sendQueryToOpenAIAndShowOnNewEditor(queryText, openAIKey);
+		}
+	));
+
+	// 改善已選取的程式區塊
+	addToRegistrationList(
+		registerCommand(command.improveCodeForMe, async () => {
+
+			const selectedCode = getSelectedCode();
+			if (selectedCode === '') {
+				vscode.window.showErrorMessage('Please Select Code Block First!');
+			}
+
+			const queryText = `請用繁體中文回答我，不用解釋，給我程式碼就好。幫我改善以下的程式碼：\n ${selectedCode}`;
+			const openAIKey = await getOpenAIKey(context.secrets, false);
+			await sendQueryToOpenAIAndShowOnNewEditor(queryText, openAIKey);
 		}
 	));
 
@@ -32,12 +182,9 @@ function commandsRegistration(): Array<vscode.Disposable> {
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "chatgpt-coding-with-you" is now active!');
-
-	const registrationList = commandsRegistration();
-	context.subscriptions.push(...registrationList);
+	context.subscriptions.push(
+		...commandsRegistration(context),
+	);
 }
 
 // This method is called when your extension is deactivated
