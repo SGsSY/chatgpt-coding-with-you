@@ -14,10 +14,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "chatgpt-coding-with-you.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "chatgpt-coding-with-you.settingNewApiKey",
         "title": "設定 OpenAI API Key"
       },
@@ -31,7 +27,11 @@
       },
       {
         "command": "chatgpt-coding-with-you.improveCodeForMe",
-        "title": "改善這段程式"
+        "title": "你會怎麼寫?"
+      },
+      {
+        "command": "chatgpt-coding-with-you.customQuestion",
+        "title": "自訂問題"
       }
     ],
     "menus": {
@@ -55,6 +55,11 @@
           "command": "chatgpt-coding-with-you.improveCodeForMe",
           "when": "editorTextFocus",
           "group": "ChatGPTCodingWithYou@4"
+        },
+        {
+          "command": "chatgpt-coding-with-you.customQuestion",
+          "when": "editorTextFocus",
+          "group": "ChatGPTCodingWithYou@5"
         }
       ]
     }

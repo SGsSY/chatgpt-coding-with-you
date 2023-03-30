@@ -9,6 +9,7 @@ const command = {
 	writeCommentForMe: `${projectName}.writeCommentForMe`,
 	writeDescriptionForMe: `${projectName}.writeDescriptionForMe`,
 	improveCodeForMe: `${projectName}.improveCodeForMe`,
+	customQuestion: `${projectName}.customQuestion`,
 };
 const openAIKeyId = `${projectName}.openAIKey`;
 
@@ -137,9 +138,10 @@ function commandsRegistration(context: vscode.ExtensionContext): Array<vscode.Di
 			const selectedCode = getSelectedCode();
 			if (selectedCode === '') {
 				vscode.window.showErrorMessage('Please Select Code Block First!');
+				return;
 			}
 
-			const queryText = `請用繁體中文回答我。以下的程式碼請幫我寫註解：\n ${selectedCode}`;
+			const queryText = `請幫我在以下程式碼內用繁體中文撰寫註解。\n ${selectedCode}`;
 			const openAIKey = await getOpenAIKey(context.secrets, false);
 			await sendQueryToOpenAIAndShowOnNewEditor(queryText, openAIKey);
 		}
@@ -152,9 +154,10 @@ function commandsRegistration(context: vscode.ExtensionContext): Array<vscode.Di
 			const selectedCode = getSelectedCode();
 			if (selectedCode === '') {
 				vscode.window.showErrorMessage('Please Select Code Block First!');
+				return;
 			}
 
-			const queryText = `請用繁體中文回答我。以下的程式碼請幫我寫說明：\n ${selectedCode}`;
+			const queryText = `請用繁體中文回答我。請告訴我以下的程式碼在做什麼。\n ${selectedCode}`;
 			const openAIKey = await getOpenAIKey(context.secrets, false);
 			await sendQueryToOpenAIAndShowOnNewEditor(queryText, openAIKey);
 		}
@@ -167,9 +170,26 @@ function commandsRegistration(context: vscode.ExtensionContext): Array<vscode.Di
 			const selectedCode = getSelectedCode();
 			if (selectedCode === '') {
 				vscode.window.showErrorMessage('Please Select Code Block First!');
+				return;
 			}
 
-			const queryText = `請用繁體中文回答我，不用解釋，給我程式碼就好。幫我改善以下的程式碼：\n ${selectedCode}`;
+			const queryText = `請用繁體中文回答我，不用解釋，給我程式碼就好。請告訴我以下的程式碼用相同的程式語言你會怎麼寫?\n ${selectedCode}`;
+			const openAIKey = await getOpenAIKey(context.secrets, false);
+			await sendQueryToOpenAIAndShowOnNewEditor(queryText, openAIKey);
+		}
+	));
+
+	// 自訂問題
+	addToRegistrationList(
+		registerCommand(command.customQuestion, async () => {
+
+			const selectedCode = getSelectedCode();
+			if (selectedCode === '') {
+				vscode.window.showErrorMessage('Please Select Code Block First!');
+				return;
+			}
+
+			const queryText = `${selectedCode}`;
 			const openAIKey = await getOpenAIKey(context.secrets, false);
 			await sendQueryToOpenAIAndShowOnNewEditor(queryText, openAIKey);
 		}
